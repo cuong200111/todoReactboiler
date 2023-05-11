@@ -17,12 +17,13 @@ export const defaultActionTodo_sucsess = (lengthRows) => {
     )
 }
 //query
-export const query_todo = (page,limit) => {
+export const query_todo = (page,limit,testData) => {
     return (
         {
             type: types.QUERY_TODO,
             limit,
-            page
+            page,
+            testData
         }
     )
 }
@@ -89,9 +90,9 @@ export const update_todo_failure = (data) => {
     )
 }
 //delete
-export const delete_todo = () => {
+export const delete_todo = (data) => {
     return (
-        { type: types.DELETE_TODO }
+        { type: types.DELETE_TODO,data }
     )
 }
 export const delete_todo_sucsses = (data) => {

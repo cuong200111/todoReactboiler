@@ -1,0 +1,1 @@
+export const Api1 = 'https://jsonplaceholder.typicode.com/todos'

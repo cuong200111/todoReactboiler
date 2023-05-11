@@ -1,32 +1,54 @@
 import React, { memo, useEffect, useState } from "react";
-import { Paper, TablePagination } from "@material-ui/core";
-import { Grid, Table, VirtualTable, PagingPanel, TableFixedColumns, TableHeaderRow } from "@devexpress/dx-react-grid-material-ui";
-import { CustomPaging, PagingState } from "@devexpress/dx-react-grid";
+import { Button, Fab, Grid, Hidden, Paper, TablePagination } from "@material-ui/core";
+import { Grid as GridTable, Table, VirtualTable, PagingPanel, TableFixedColumns, TableHeaderRow, TableSelection } from "@devexpress/dx-react-grid-material-ui";
+import { CustomPaging, IntegratedSelection, PagingState, SelectionState } from "@devexpress/dx-react-grid";
 import { compose } from "redux";
 import { useInjectReducer } from 'utils/injectReducer';
 import { useInjectSaga } from 'utils/injectSaga';
 import * as types from './action'
 import { connect } from "react-redux";
+import { Delete, Notifications } from "@material-ui/icons";
 import reducer from './reducer'
 import saga from './saga'
 import { createSelector, createStructuredSelector } from "reselect";
 import makeSelectTodo from "./selector";
 import { fromJS } from 'immutable'
-function TodoListPage({ query, Todo ,countRows}) {
+import './index.css'
+import { makeStyles } from "@material-ui/styles";
+const useStyle = makeStyles({
+    fabStyle: {
+        backgroundColor: "#ff00007d !important",
+        "&:hover": {
+            backgroundColor: "red !important",
+        }
+    }
+})
+function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
+
+    const classes = useStyle()
+
 
     useInjectReducer({ key: "Todo", reducer });
     useInjectSaga({ key: "Todo", saga });
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [pageSize, setPageSize] = useState(0);
     const dataRowCls = [{ title: "stt", name: "stt", checked: true }, { title: "Name Todo", name: "NameTodo", checked: true }, { title: "userID", name: "userid", checked: true }]
-    const dataRows = []
-    const [rows, setRows] = useState(dataRows)
-    const rowCls =dataRowCls
-   const [limit,setLimit] = useState(0)
+    const [rows, setRows] = useState([])
+    const rowCls = dataRowCls
+    const [testData, setTestData] = useState(false)
+    const [counts, setCount] = useState(0)
+
+
+    
     const TableRow = ({ row, ...restProps }) => {
         return <Table.Row
             {...restProps}
-            row={row}
+            onMouseOver={(e)=>{
+                console.log(e.target.style = 'cursor:pointer')
+            }}
+            onClick={()=>{
+                handleRow()
+            }}
         />
     }
 
@@ -34,71 +56,161 @@ function TodoListPage({ query, Todo ,countRows}) {
 
         return <TableHeaderRow.Cell {...rest} />;
     }
-  
-    const handleChangePage = (page, newPage) => {
 
+    const handleChangePage = (page, newPage) => {
         setPageSize(newPage);
     }
     const handleChangeRowsPerPage = (event) => {
         setRowsPerPage(event.target.value);
         setPageSize(0);
     }
-  
-    useEffect(() => {
-        query(pageSize,rowsPerPage)
-    }, [rowsPerPage,pageSize])
 
-    useEffect(()=>{
-        countRows()
-
-    },[])
     useEffect(() => {
-        if (Todo.data && Array.isArray(Todo.data)) {
-            const newArr = Todo.data.map((item, index) => {
+
+        Todo.dataDelete && setTestData(Todo.dataDelete)
+        const newArr = Todo.data && Todo.data.data.map((item, index) => {
+            if (testData) {
+                return item
+            } else {
                 item.checked = true
                 item.userid = item.userId
                 item.NameTodo = item.title
                 item.stt = item.id
-                delete item.id
-                delete item.userId
-                delete  item.title
                 return item
+            }
+
+        })
+        setRows(testData ? Todo.data.data : newArr ? newArr : [])
+        setCount(newArr && Todo.data.length ? Todo.data.length : 0)
+    }, [Todo.data, Todo.dataDelete, testData])
+    useEffect(() => {
+        query(pageSize, rowsPerPage, testData)
+    }, [rowsPerPage, pageSize, testData])
+
+
+
+    const [selection, setSelection] = useState([]);
+
+    const handleSelectionChange = (selectedRows) => {
+        setSelection(selectedRows);
+    };
+    const DeleteTodo = () => {
+        const data = rows.filter((item, index) => selection.includes(index))
+        const dat = testData && testData ? testData : Todo.data.firstData
+        const newArr = dat.map((item, index) => {
+            return {
+                checked: !testData ? true : true,
+                userid: !testData ? item.userId : item.userid,
+                NameTodo: !testData ? item.title : item.NameTodo,
+                stt: !testData ? item.id : item.stt
+            }
+        })
+        const newData = newArr.filter((item, index) => {
+            return data.every(itemz => itemz.stt !== item.stt)
+        })
+        deleteTodos(newData)
+        setSelection([])
+    }
+    const [activeAction, setActiveAction] = useState({
+        update: false,
+        delete: false,
+        add: false
+    })
+    console.log(activeAction);
+    const handleAction = (action) => {
+
+        if (action === 'xóa') {
+
+            setActiveAction({
+
+                update: false,
+                delete: true,
+                add: false
+
             })
-            console.log(newArr);
-            setRows(newArr)
         }
-    }, [Todo.data])
+        if (action === 'thêm') {
 
+            setActiveAction({
+
+                update: false,
+                delete: false,
+                add: true
+
+            })
+        }
+        if (action === 'sửa') {
+
+            setActiveAction({
+
+                update: true,
+                delete: false,
+                add: false
+
+            })
+        }
+    }
+    const handleRow = ()=>{
+        
+    }
     return (
-        <div style={{ height: "100vh", width: "100vw", backgroundColor: "black", display: "flex", padding: 50 }}>
+        <div style={{ height: "100vh", width: "100vw", backgroundColor: "black", padding: 50 }}>
 
-            <Paper style={{ width: "50%", height: "100%", backgroundColor: "white", borderTopLeftRadius: 10, borderBottomLeftRadius: 10 }}>
-                <Grid rows={rows} columns={rowCls}>
-                    <PagingState
-                        currentPage={rowsPerPage}
-                        pageSize={pageSize}
+            <div  style={{ height: "100%", width: "100%", display: "flex", borderRadius: "10px", overflow: "hidden" }}>
+                <Paper style={{ width: "50%", height: "100%", backgroundColor: "white" }}>
+                    <GridTable rows={rows} columns={rowCls}>
+                        <PagingState
+                            currentPage={rowsPerPage}
+                            pageSize={pageSize}
+                        />
+                        <VirtualTable
+                            rowComponent={TableRow}
+
+                            messages={{ noData: 'Không có dữ liệu' }}
+                        />
+
+                        <CustomPaging totalCount={pageSize} />
+                        <TableHeaderRow cellComponent={DragColumn} />
+
+                        <SelectionState selection={selection} onSelectionChange={handleSelectionChange} />
+                        <IntegratedSelection />
+                        {activeAction.delete? <TableSelection
+                            selectByRowClick
+                            highlightRow
+                            showSelectionColumn={true}
+                            showSelectAll={true}
+
+                        />:''}
+
+                    </GridTable>
+
+
+                    <TablePagination
+
+                        component="div"
+
+                        count={counts && counts}
+                        page={pageSize}
+                        onChangePage={handleChangePage}
+                        rowsPerPage={rowsPerPage}
+                        onChangeRowsPerPage={handleChangeRowsPerPage}
                     />
-                    <VirtualTable
-                        rowComponent={TableRow}
+                    <Button onClick={() => { handleAction('thêm') }} variant="outlined" color="primary">Thêm</Button>
+                    <Button onClick={() => { handleAction('sửa') }} style={{ margin: "0 10px" }} variant="outlined" color="primary">Sửa</Button>
+                    <Button onClick={() => { handleAction('xóa') }} variant="outlined" color="primary">Xóa</Button>
+                </Paper>
+                <div style={{ position: "relative", borderLeft: "1px solid #0000004f", width: "50%", height: "100%", backgroundColor: "white" }}>
+                    <Grid style={{ justifyContent: "center", padding: "10px 0", position: "absolute", left: "1%" }}>
+                        {selection.length > 0 ?
+                            <Fab size="small" className={classes.fabStyle} onClick={DeleteTodo}>
+                                <Delete style={{ color: "white" }} />
+                            </Fab> : ""
+                        }
+                    </Grid>
+                    <Grid style={{ marginTop: "100px" }}>
 
-                        messages={{ noData: 'Không có dữ liệu' }}
-                    />
-
-                    <CustomPaging totalCount={pageSize} />
-                    <TableHeaderRow cellComponent={DragColumn} />
-
-                </Grid>
-                <TablePagination
-                    component="div"
-                    count={Todo.lengthRows?Todo.lengthRows:0}
-                    page={pageSize}
-                    onChangePage={handleChangePage}
-                    rowsPerPage={rowsPerPage}
-                    onChangeRowsPerPage={handleChangeRowsPerPage}
-                />
-            </Paper>
-            <div style={{ borderLeft: "1px solid #0000004f", width: "50%", backgroundColor: "white", borderTopRightRadius: 10, borderBottomRightRadius: 10 }}>
-
+                    </Grid>
+                </div>
             </div>
         </div>
     )
@@ -108,11 +220,15 @@ const mapStateToProps = createStructuredSelector({
 });
 function mapDispathToProps(dispatch) {
     return {
-        query: (limit,page) => {
-            dispatch(types.query_todo(limit,page))
+        query: (limit, page, testData) => {
+            dispatch(types.query_todo(limit, page, testData))
         },
-        countRows:()=>{
-            dispatch(types.defaultActionTodo())
+
+        deleteTodos: (data) => {
+            dispatch(types.delete_todo(data))
+        },
+        updateTodos: () => {
+            dispatch(types.update_todo())
         }
     }
 }
