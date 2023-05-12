@@ -68,9 +68,9 @@ export const create_todo_failure = (data) => {
     )
 }
 //update
-export const update_todo = () => {
+export const update_todo = (data) => {
     return (
-        { type: types.UPDATE_TODO }
+        { type: types.UPDATE_TODO,data }
     )
 }
 export const update_todo_sucsses = (data) => {

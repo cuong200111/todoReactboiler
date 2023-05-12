@@ -35,7 +35,11 @@ export function* deleteTodo(action) {
     const { data } = action
     yield put(actionTypes.delete_todo_sucsses(data))
 }
-
+function* updateTodo(action) {
+    const { data } = action
+    console.log(data);
+    yield put(actionTypes.update_todo_sucsses(data))
+}
 
 
 
@@ -49,4 +53,5 @@ export default function* todoSaga() {
     yield takeLatest(constantsTypes.QUERY_TODO, queryTodo)
 
     yield takeLatest(constantsTypes.DELETE_TODO, deleteTodo)
+    yield takeLatest(constantsTypes.UPDATE_TODO,updateTodo)
 } 

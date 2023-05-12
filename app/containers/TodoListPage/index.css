@@ -7,3 +7,11 @@
     background-color: rgba(43, 189, 97, 0.101) !important;
     cursor: pointer !important;
 }
+.TableRow{
+    background-color: transparent;
+    transition: 0.3s;
+    cursor: pointer;
+}
+.TableRow:hover{
+    background-color: rgba(0, 128, 0, 0.074);
+}
