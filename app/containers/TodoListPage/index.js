@@ -25,27 +25,36 @@ const useStyle = makeStyles({
 })
 function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
     const classes = useStyle()
+    const [valueID, setValueID] = useState('');
+    const [valueNameTodo, setValueNameTodo] = useState('');
     useInjectReducer({ key: "Todo", reducer });
     useInjectSaga({ key: "Todo", saga });
     const [rowsPerPage, setRowsPerPage] = useState(10);
     const [pageSize, setPageSize] = useState(0);
-    const dataRowCls = [{ title: "stt", name: "stt", checked: true }, { title: "Name Todo", name: "NameTodo", checked: true }, { title: "userID", name: "userid", checked: true }, { title: "action", name: "actionUpdate", checked: true }]
+    const dataRowCls = [{ title: "stt", name: "stt", checked: true },
+    { title: "Name Todo", name: "NameTodo", checked: true },
+    { title: "userID", name: "userid", checked: true },
+    { title: "action", name: "actionUpdate", checked: true }]
     const [rows, setRows] = useState([])
     const [rowCls, setRowCls] = useState(dataRowCls)
     const [itemRow, setItemRow] = useState(false)
     const [testData, setTestData] = useState(false)
     const [updateData, setUpdateData] = useState(false)
     const [counts, setCount] = useState(0)
-
+    console.log(testData)
     const handleChangePage = (page, newPage) => {
         setPageSize(newPage);
     }
+
     const handleChangeRowsPerPage = (event) => {
         setRowsPerPage(event.target.value);
         setPageSize(0);
     }
 
     useEffect(() => {
+
+
+        console.log(Todo.dataUpdate)
         const testDataAction = testData && testData.some(item => item.title === "action")
         if (!testDataAction) {
             testData && testData.map((item, index) => {
@@ -58,8 +67,8 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
             })
         }
 
-        Todo.dataDelete && setTestData(Todo.dataUpdate ? Todo.dataUpdate : Todo.dataDelete)
-
+        Todo.dataDelete && setTestData(Todo.dataDelete)
+        Todo.dataUpdate && setUpdateData(Todo.dataUpdate)
         const newArr = Todo.data && Todo.data.data.map((item, index) => {
             if (testData) {
                 return item
@@ -69,8 +78,7 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
                 item.NameTodo = item.title
                 item.stt = item.id
                 item.actionUpdate = <Fab key={index} onClick={(...rest) => {
-                    setValueID(1)
-                    setValueNameTodo(1)
+
                     setItemRow(item)
                 }} className="handleUpdate" style={{ width: "35px", height: "20px" }} >
                     <Update fontSize="small" />
@@ -79,12 +87,15 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
             }
 
         })
-        setRows(testData ? Todo.data.data : newArr ? newArr : [])
+        setRows(updateData ? updateData : testData ? Todo.data.data : newArr ? newArr : [])
+        console.log(updateData, 'updateData')
+        console.log(testData ? Todo.data.data : [], 'Todo.data.data')
+        console.log(newArr, 'newArr')
         setCount(newArr && Todo.data.length ? Todo.data.length : 0)
-    }, [Todo.data, Todo.dataDelete, Todo.dataUpdate, testData])
+    }, [Todo.data, Todo.dataDelete, Todo.dataUpdate, testData, updateData])
     useEffect(() => {
         const dataquery = updateData && updateData ? updateData : testData
-        query(pageSize, rowsPerPage, dataquery)
+        query(pageSize, rowsPerPage, testData)
     }, [rowsPerPage, pageSize, testData])
 
 
@@ -165,8 +176,7 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
 
         </>);
     }
-    const [valueID, setValueID] = useState(1);
-    const [valueNameTodo, setValueNameTodo] = useState(1);
+
 
     return (
         <div style={{ height: "100vh", width: "100vw", backgroundColor: "black", padding: 50 }}>
@@ -226,7 +236,7 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
                     <Grid style={{ marginTop: "100px" }}>
                         {itemRow && itemRow ? <>
                             <Grid item container style={{ justifyContent: "space-around" }}>
-                                <TextField label="ID cần thay đổi" variant="outlined" value={valueID !== 1 ? valueID : itemRow.userid} onChange={(e) => {
+                                <TextField label="ID cần thay đổi" variant="outlined" onChange={(e) => {
 
                                     setValueID(e.target.value)
                                 }}
@@ -236,8 +246,7 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
                                         style: { padding: "0 15px" }
                                     }}
                                 />
-                                <TextField label="NameTodo" variant="outlined" value={valueNameTodo !== 1 ? valueNameTodo : itemRow.NameTodo
-                                } onChange={(e) => {
+                                <TextField label="NameTodo" variant="outlined" onChange={(e) => {
 
                                     setValueNameTodo(e.target.value)
                                 }}
@@ -249,18 +258,10 @@ function TodoListPage({ query, Todo, deleteTodos, updateTodos }) {
                                 />
                             </Grid>
                             <Grid style={{ padding: "0 20%" }}>
+
                                 <Button onClick={() => {
-                                    const dataUpdate =  Todo.data.firstData.map((item) => {
-                                     
-                                        if (item.stt === itemRow.stt) {
-                                            item.NameTodo = valueNameTodo
-                                            item.stt = valueID
-                                        }
-                                        return item
-                                    })
 
 
-                                    updateTodos(dataUpdate)
                                 }} style={{ width: "100%", marginTop: "20px" }} variant="outlined" color="secondary">Update</Button>
                             </Grid>
                         </> : ''}
@@ -283,9 +284,7 @@ function mapDispathToProps(dispatch) {
         deleteTodos: (data) => {
             dispatch(types.delete_todo(data))
         },
-        updateTodos: (data) => {
-            dispatch(types.update_todo(data))
-        }
+     
     }
 }
 const withConnect = connect(mapStateToProps, mapDispathToProps)

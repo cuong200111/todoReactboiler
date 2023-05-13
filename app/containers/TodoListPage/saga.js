@@ -17,16 +17,17 @@ export function* queryTodo(action) {
 
     try {
  
+        const data2 = yield call(datas)
         const data = yield call(datas)
         const dataDelete = {data:testData&&testData.slice(startIndex, endIndex),length:testData.length}
 
-        const newData =  {data:data.slice(startIndex, endIndex),length:data.length,firstData:data}
+        const newData =  {data:data.slice(startIndex, endIndex),length:data.length,firstData:data,updateData:data2}
 
         yield put(actionTypes.query_todo_sucsses(testData?dataDelete:newData))
 
 
     } catch (error) {
-console.log(error);
+
         yield put(actionTypes.query_todo_failure(error))
     }
 }
@@ -35,10 +36,14 @@ export function* deleteTodo(action) {
     const { data } = action
     yield put(actionTypes.delete_todo_sucsses(data))
 }
-function* updateTodo(action) {
-    const { data } = action
-    console.log(data);
-    yield put(actionTypes.update_todo_sucsses(data))
+ function* updateTodo(action) {
+    const { data2 } = action
+
+   try {
+    yield put(actionTypes.update_todo_sucsses(data2))
+   } catch (error) {
+    console.log(error);
+   }
 }
 
 
@@ -50,8 +55,9 @@ function* updateTodo(action) {
 
 
 export default function* todoSaga() {
+    yield takeLatest(constantsTypes.UPDATE_TODO,updateTodo)
     yield takeLatest(constantsTypes.QUERY_TODO, queryTodo)
 
     yield takeLatest(constantsTypes.DELETE_TODO, deleteTodo)
-    yield takeLatest(constantsTypes.UPDATE_TODO,updateTodo)
+  
 } 
