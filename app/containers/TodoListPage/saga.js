@@ -42,7 +42,7 @@ export function* deleteTodo(action) {
    try {
     yield put(actionTypes.update_todo_sucsses(data2))
    } catch (error) {
-    console.log(error);
+  
    }
 }
 
